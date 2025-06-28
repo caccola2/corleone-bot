@@ -291,68 +291,78 @@ async def richiesta_taglia(interaction: discord.Interaction):
 
 # ✅ SISTEMA LOGS
 
-# ID del canale dove inviare i log
-LOG_CHANNEL_ID = 1244270159010318407  # Sostituisci con il tuo ID canale log
+# ID canale log
+LOG_CHANNEL_ID = 1388633244806942762
 
-# Funzione principale di log
-async def log_to_channel(bot, message: str):
-    ch = bot.get_channel(LOG_CHANNEL_ID)
-    if ch is None:
-        print(f"[LOG-FALLBACK] {message}")  # Log su console se il canale non esiste
-        return
+intents = discord.Intents.default()
+intents.message_content = True  # se usi discord.py >=2.0
+intents.messages = True
+intents.guilds = True
+intents.members = True
 
-    try:
-        await ch.send(f"🪵 {message}")
-    except Exception as e:
-        print(f"[LOG-ERROR] Impossibile inviare il log: {e}")
-        print(f"[LOG-FALLBACK] {message}")
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Evento quando il bot è pronto
+async def send_log_message(bot, content):
+    channel = bot.get_channel(LOG_CHANNEL_ID)
+    if channel:
+        try:
+            await channel.send(content)
+        except Exception as e:
+            print(f"Errore invio log: {e}")
+
 @bot.event
 async def on_ready():
-    await bot.tree.sync()
-    msg = f"✅ Bot online come `{bot.user}` (ID: {bot.user.id})"
-    print(f"[DEBUG] {msg}")
-    await log_to_channel(bot, msg)
+    print(f"Bot online come {bot.user}")
+    await send_log_message(f"✅ **Bot online** come `{bot.user}` alle {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
 
-# Evento quando viene usato un comando slash
+
 @bot.event
-async def on_application_command(interaction: discord.Interaction):
-    user = f"{interaction.user.mention} (`{interaction.user.id}`)"
-    cmd = f"{interaction.command.name}"
-    await log_to_channel(bot, f"📥 Slash `/` comando `{cmd}` usato da {user}")
+async def on_message(message):
+    # Ignora messaggi del bot stesso
+    if message.author == bot.user:
+        return
+    
+    # Log messaggi usati in qualsiasi canale
+    log_msg = (f"📨 Messaggio in #{message.channel} da {message.author}:\n"
+               f"> {message.content}")
+    await send_log_message(log_msg)
 
-# Evento quando viene usato un comando con prefisso (!)
+    # Continua la normale elaborazione dei comandi
+    await bot.process_commands(message)
+
+
 @bot.event
 async def on_command(ctx):
-    user = f"{ctx.author.mention} (`{ctx.author.id}`)"
-    cmd = ctx.command.name
-    await log_to_channel(bot, f"📥 Prefisso `!` comando `{cmd}` usato da {user}")
+    # Log comando ricevuto
+    await send_log_message(f"▶️ Comando `{ctx.command}` ricevuto da {ctx.author} in #{ctx.channel}")
 
-# Evento per loggare errori nei comandi
+
+@bot.event
+async def on_command_completion(ctx):
+    # Log comando completato con successo
+    await send_log_message(f"✅ Comando `{ctx.command}` eseguito con successo da {ctx.author}")
+
+
 @bot.event
 async def on_command_error(ctx, error):
-    await log_to_channel(
-        bot,
-        f"⚠️ Errore nel comando `{ctx.command}` da {ctx.author.mention} (`{ctx.author.id}`):\n`{str(error)}`"
-    )
+    # Log errore comando con stacktrace
+    tb = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
+    msg = (f"❌ Errore comando `{ctx.command}` eseguito da {ctx.author} in #{ctx.channel}\n"
+           f"Errore: {error}\n"
+           f"```py\n{tb}\n```")
+    await send_log_message(msg)
 
-# Evento per loggare errori globali (non solo comandi)
+    # Se vuoi, puoi anche gestire errori specifici qui
+    # Es: inviare un messaggio all'utente o ignorare errori comuni
+
+
 @bot.event
-async def on_error(event, *args, **kwargs):
-    trace = traceback.format_exc(limit=5)
-    trace = trace[:1900]  # Evita di superare i limiti di Discord
-    await log_to_channel(bot, f"❌ Errore globale in `{event}`:\n```\n{trace}\n```")
+async def on_error(event_method, *args, **kwargs):
+    # Log errori globali non gestiti con stacktrace
+    tb = traceback.format_exc()
+    msg = f"⚠️ Errore globale nell'evento `{event_method}`\n```py\n{tb}\n```"
+    await send_log_message(msg)
 
-# Funzione di log per esito di approvazione/rifiuto
-async def log_esito(bot, title: str, approvato: bool, moderatore: discord.Member, utente: discord.Member, motivazione: str):
-    emoji = "✅" if approvato else "❌"
-    stato = "approvata" if approvato else "rifiutata"
-    motivazione_tagliata = (motivazione[:150] + "...") if len(motivazione) > 150 else motivazione
-    await log_to_channel(
-        bot,
-        f"{emoji} `{title}` {stato} da {moderatore.mention} → {utente.mention}. Motivo: `{motivazione_tagliata}`"
-    )
 
 if __name__ == "__main__":
     token = os.getenv("CRIMI_TOKEN")
