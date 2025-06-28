@@ -37,6 +37,7 @@ async def on_ready():
     print(f"[DEBUG] Bot connesso come {bot.user}")
 
 CANALE_RICHIESTE_ID = 1368676791094612028
+THUMBNAIL_URL = "https://media.discordapp.net/attachments/1305532702560092211/1305537542388453446/ca921a39b77c3f617eae15daae4805d5.png?ex=6860a2d5&is=685f5155&hm=603aaf0917d163cd9bcf73459fc243c3c60eb2b295c224dd703d9c91f950ab44&=&format=webp&quality=lossless&width=848&height=848"
 
 class RegistroOrganizzazioneModal(discord.ui.Modal, title="Registrazione Organizzazione"):
     nome_roblox = discord.ui.TextInput(label="Nome Roblox", required=True)
@@ -54,8 +55,9 @@ class RegistroOrganizzazioneModal(discord.ui.Modal, title="Registrazione Organiz
         embed.add_field(name="Nome Discord", value=self.nome_discord.value, inline=False)
         embed.add_field(name="Nome Organizzazione", value=self.nome_organizzazione.value, inline=False)
         embed.add_field(name="Tipo Organizzazione", value=self.tipo_organizzazione.value, inline=False)
-        embed.add_field(name="Zona Operativa", value=self.zona_operativa.value, inline=False)
+        embed.add_field(name="Zona nella quale si vuole operare", value=self.zona_operativa.value, inline=False)
         embed.set_footer(text=f"ID Richiedente: {interaction.user.id}")
+        embed.set_thumbnail(url=THUMBNAIL_URL)
 
         view = AzioneView(interaction.user, embed)
         canale = interaction.guild.get_channel(CANALE_RICHIESTE_ID)
@@ -92,7 +94,7 @@ class NoteModal(discord.ui.Modal, title="Note o Motivazione"):
 
     async def on_submit(self, interaction: discord.Interaction):
         if self.accettato:
-            self.embed.title = "Richiesta Organizzazione Accettata"
+            self.embed.title = "Richiesta Organizzazione Accettata!"
             self.embed.color = discord.Color.green()
             self.embed.add_field(name="Note Aggiuntive", value=self.note.value, inline=False)
         else:
@@ -105,13 +107,14 @@ class NoteModal(discord.ui.Modal, title="Note o Motivazione"):
         try:
             await self.utente.send(embed=self.embed)
         except discord.Forbidden:
-            await interaction.followup.send("⚠️ Non riesco a mandare un messaggio privato all'utente.", ephemeral=True)
+            await interaction.followup.send("⚠️ Impossibile inviare un DM all'utente.", ephemeral=True)
 
-        await interaction.response.send_message("Richiesta gestita correttamente.", ephemeral=True)
+        await interaction.response.send_message("Richiesta gestita con successo.", ephemeral=True)
 
 @bot.tree.command(name="registro-organizzazioni", description="Registra una nuova organizzazione criminale")
 async def registro_organizzazioni(interaction: discord.Interaction):
     await interaction.response.send_modal(RegistroOrganizzazioneModal())
+
 # 🚀 Avvio
 if __name__ == "__main__":
     token = os.getenv("CRIMI_TOKEN")
