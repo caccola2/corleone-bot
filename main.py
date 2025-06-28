@@ -6,7 +6,6 @@ from flask import Flask
 from threading import Thread
 import unicodedata
 
-# 🌐 Web server
 app = Flask('')
 
 @app.route('/')
@@ -18,7 +17,6 @@ def run():
 
 Thread(target=run).start()
 
-# ⚙️ Setup bot
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
@@ -119,11 +117,9 @@ async def registro_organizzazioni(interaction: discord.Interaction):
 
 # ✅ COMANDO SEGNALAZIONE FDO
 
-# ID canale e ruolo
 CANALE_SEGNALAZIONI_ID = 1368496866764783617
 RUOLO_DA_PINGARE_ID = 1368521510272372867
 
-# Immagine thumbnail
 THUMBNAIL_URL = "https://media.discordapp.net/attachments/1305532702560092211/1305537542388453446/ca921a39b77c3f617eae15daae4805d5.png?ex=6860a2d5&is=685f5155&hm=603aaf0917d163cd9bcf73459fc243c3c60eb2b295c224dd703d9c91f950ab44"
 
 class NoteModal(discord.ui.Modal, title="Motivazione / Note Aggiuntive"):
@@ -152,7 +148,7 @@ class NoteModal(discord.ui.Modal, title="Motivazione / Note Aggiuntive"):
             dm_embed = self.embed.copy()
             await self.user.send("📢 Esito della tua segnalazione FDO:", embed=dm_embed)
         except:
-            pass  # Ignora se l'utente ha i DM chiusi
+            pass
 
         await interaction.response.send_message("✅ Esito gestito con successo.", ephemeral=True)
 
@@ -206,7 +202,94 @@ class SegnaleFDOModal(discord.ui.Modal, title="Segnalazione FDO"):
 async def segnale_fdo(interaction: discord.Interaction):
     await interaction.response.send_modal(SegnaleFDOModal())
 
-# 🚀 Avvio
+# ✅ COMANDO RICHIESTA TAGLIA
+
+THUMBNAIL_URL = "https://media.discordapp.net/attachments/1305532702560092211/1305537542388453446/ca921a39b77c3f617eae15daae4805d5.png?ex=6860a2d5&is=685f5155&hm=603aaf0917d163cd9bcf73459fc243c3c60eb2b295c224dd703d9c91f950ab44"
+
+CANALE_TAGLIA_ID = 1370048407628152892
+
+class NoteTagliaModal(discord.ui.Modal, title="Motivazione / Note Aggiuntive"):
+    def __init__(self, user, embed, message, approvato: bool):
+        super().__init__()
+        self.user = user
+        self.embed = embed
+        self.message = message
+        self.approvato = approvato
+
+    note = discord.ui.TextInput(label="Motivazione / Note", style=discord.TextStyle.paragraph, required=True)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if self.approvato:
+            self.embed.title = "Richiesta Taglia Accettata!"
+            self.embed.color = discord.Color.green()
+            self.embed.add_field(name="Note Aggiuntive", value=self.note.value, inline=False)
+        else:
+            self.embed.title = "Richiesta Taglia Rifiutata"
+            self.embed.color = discord.Color.red()
+            self.embed.add_field(name="Motivazione del Rifiuto", value=self.note.value, inline=False)
+
+        await self.message.edit(embed=self.embed, view=None)
+
+        try:
+            dm_embed = self.embed.copy()
+            await self.user.send("📢 Esito della tua richiesta taglia:", embed=dm_embed)
+        except:
+            pass
+
+        await interaction.response.send_message("✅ Esito gestito con successo.", ephemeral=True)
+
+class AzioneTagliaView(discord.ui.View):
+    def __init__(self, user, embed):
+        super().__init__(timeout=None)
+        self.user = user
+        self.embed = embed
+
+    @discord.ui.button(label="Accetta", style=discord.ButtonStyle.success)
+    async def accetta(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not interaction.user.guild_permissions.administrator:
+            return await interaction.response.send_message("❌ Non hai il permesso per usare questo pulsante.", ephemeral=True)
+        await interaction.response.send_modal(NoteTagliaModal(self.user, self.embed, interaction.message, True))
+
+    @discord.ui.button(label="Rifiuta", style=discord.ButtonStyle.danger)
+    async def rifiuta(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not interaction.user.guild_permissions.administrator:
+            return await interaction.response.send_message("❌ Non hai il permesso per usare questo pulsante.", ephemeral=True)
+        await interaction.response.send_modal(NoteTagliaModal(self.user, self.embed, interaction.message, False))
+
+class RichiestaTagliaModal(discord.ui.Modal, title="Richiesta Taglia"):
+    nome_roblox = discord.ui.TextInput(label="Nome Roblox", required=True)
+    nome_discord = discord.ui.TextInput(label="Nome Discord", required=True)
+    organizzazione = discord.ui.TextInput(label="Organizzazione del mittente", required=True)
+    motivazione = discord.ui.TextInput(label="Motivazione", style=discord.TextStyle.paragraph, required=True)
+    prove = discord.ui.TextInput(label="Prove (link, testi, ecc)", style=discord.TextStyle.paragraph, required=True)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+            title="Richiesta Taglia Inviata",
+            color=discord.Color.orange()
+        )
+        embed.add_field(name="Nome Roblox", value=self.nome_roblox.value, inline=False)
+        embed.add_field(name="Nome Discord", value=self.nome_discord.value, inline=False)
+        embed.add_field(name="Organizzazione del mittente", value=self.organizzazione.value, inline=False)
+        embed.add_field(name="Motivazione", value=self.motivazione.value, inline=False)
+        embed.add_field(name="Prove", value=self.prove.value, inline=False)
+        embed.set_thumbnail(url=THUMBNAIL_URL)
+        embed.set_footer(text=f"ID Richiedente: {interaction.user.id}")
+
+        view = AzioneTagliaView(interaction.user, embed)
+
+        canale = interaction.guild.get_channel(CANALE_TAGLIA_ID)
+        if canale:
+            await canale.send(embed=embed, view=view)
+            await interaction.response.send_message("✅ Richiesta taglia inviata correttamente!", ephemeral=True)
+        else:
+            await interaction.response.send_message("❌ Errore: canale non trovato.", ephemeral=True)
+
+@bot.tree.command(name="richiesta-taglia", description="Invia una richiesta di taglia")
+async def richiesta_taglia(interaction: discord.Interaction):
+    await interaction.response.send_modal(RichiestaTagliaModal())
+
+
 if __name__ == "__main__":
     token = os.getenv("CRIMI_TOKEN")
     if token:
