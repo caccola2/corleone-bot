@@ -179,7 +179,6 @@ class SegnaleFDOModal(discord.ui.Modal, title="Segnalazione FDO"):
     motivazione = discord.ui.TextInput(label="Motivazione", style=discord.TextStyle.paragraph, required=True)
     prove = discord.ui.TextInput(label="Prove (link)", required=True)
     oggetti = discord.ui.TextInput(label="Oggetti da rimborsare (facoltativo)", required=False)
-    note_aggiuntive = discord.ui.TextInput(label="Note aggiuntive (facoltative)", style=discord.TextStyle.paragraph, required=False)
 
     async def on_submit(self, interaction: discord.Interaction):
         embed = discord.Embed(
@@ -190,7 +189,6 @@ class SegnaleFDOModal(discord.ui.Modal, title="Segnalazione FDO"):
         embed.add_field(name="Motivazione", value=self.motivazione.value, inline=False)
         embed.add_field(name="Prove", value=self.prove.value, inline=False)
         embed.add_field(name="Oggetti da Rimborsare", value=self.oggetti.value or "N/A", inline=False)
-        embed.add_field(name="Note Aggiuntive", value=self.note_aggiuntive.value or "N/A", inline=False)
         embed.set_footer(text=f"ID Richiedente: {interaction.user.id}")
         embed.set_thumbnail(url=THUMBNAIL_URL)
 
