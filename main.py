@@ -291,13 +291,13 @@ async def richiesta_taglia(interaction: discord.Interaction):
 
 # ✅ SISTEMA LOGS
 
-LOG_CHANNEL_ID = 1388633244806942762  # ID del canale log
+LOG_CHANNEL_ID = 1388633244806942762  # Canale destinato ai log
 
-async def log_to_channel(bot: commands.Bot, message: str):
-    channel = bot.get_channel(LOG_CHANNEL_ID)
-    if channel:
+async def log_to_channel(bot, message: str):
+    ch = bot.get_channel(LOG_CHANNEL_ID)
+    if ch:
         try:
-            await channel.send(f"🪵 {message}")
+            await ch.send(f"🪵 {message}")
         except Exception:
             pass
 
@@ -305,35 +305,31 @@ async def log_to_channel(bot: commands.Bot, message: str):
 async def on_ready():
     await bot.tree.sync()
     print(f"{bot.user} è online.")
-    await log_to_channel(bot, f"✅ Il bot è online come `{bot.user}` (ID: {bot.user.id})")
+    await log_to_channel(bot, f"✅ Bot online come `{bot.user}` (ID: {bot.user.id})")
 
 @bot.event
 async def on_application_command(interaction: discord.Interaction):
-    user = interaction.user
-    await log_to_channel(bot, f"📥 Comando `{interaction.command.name}` eseguito da {user.mention} (`{user.id}`)")
+    await log_to_channel(bot, f"📥 Slash `{interaction.command.name}` usato da {interaction.user.mention} (`{interaction.user.id}`)")
 
 @bot.event
 async def on_command(ctx):
-    await log_to_channel(bot, f"📥 Comando `{ctx.command}` eseguito da {ctx.author} (`{ctx.author.id}`)")
+    await log_to_channel(bot, f"📥 Prefisso `{ctx.command}` usato da {ctx.author.mention} (`{ctx.author.id}`)")
 
 @bot.event
 async def on_error(event, *args, **kwargs):
-    error_trace = traceback.format_exc()
-    error_trace = error_trace[:1900]  
-    await log_to_channel(bot, f"❌ Errore globale in `{event}`:\n```\n{error_trace}\n```")
+    trace = traceback.format_exc()[:1900]
+    await log_to_channel(bot, f"❌ Errore globale in `{event}`:\n```\n{trace}\n```")
 
 @bot.event
 async def on_command_error(ctx, error):
-    await log_to_channel(bot, f"⚠️ Errore nel comando `{ctx.command}` da `{ctx.author}`:\n`{str(error)}`")
+    await log_to_channel(bot, f"⚠️ Errore nei comandi `{ctx.command}` da `{ctx.author}`:\n`{str(error)}`")
 
-async def log_esito(title: str, approvato: bool, moderatore: discord.User, utente: discord.User, motivazione: str):
+# Funzione ausiliaria per loggare esiti di richieste (usabilità in NoteModal)
+async def log_esito(bot, title: str, approvato: bool, moderatore: discord.Member, utente: discord.Member, motivazione: str):
     emoji = "✅" if approvato else "❌"
     stato = "approvata" if approvato else "rifiutata"
-    motivazione = motivazione[:150]
-    await log_to_channel(
-        bot,
-        f"{emoji} Richiesta **{title}** {stato} da `{moderatore}` per `{utente}`.\n📄 Motivazione: {motivazione}"
-    )
+    testo = motivazione[:150]
+    await log_to_channel(bot, f"{emoji} `{title}` {stato} da {moderatore} → {utente}. Motivo: {testo}")
 
 
 if __name__ == "__main__":
