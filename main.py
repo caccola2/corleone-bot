@@ -108,9 +108,9 @@ async def registro_organizzazioni(interaction: discord.Interaction):
 
 # 🚀 Avvio
 if __name__ == "__main__":
-    token = os.getenv("DISCORD_TOKEN")
+    token = os.getenv("CRIMI_TOKEN")
     if token:
         print("[DEBUG] Avvio bot...")
         bot.run(token)
     else:
-        print("[DEBUG] Variabile DISCORD_TOKEN non trovata.")
+        print("[DEBUG] Variabile CRIMI_TOKEN non trovata.")
