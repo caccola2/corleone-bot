@@ -289,6 +289,52 @@ class RichiestaTagliaModal(discord.ui.Modal, title="Richiesta Taglia"):
 async def richiesta_taglia(interaction: discord.Interaction):
     await interaction.response.send_modal(RichiestaTagliaModal())
 
+# ✅ SISTEMA LOGS
+
+LOG_CHANNEL_ID = 1388633244806942762  # ID del canale log
+
+async def log_to_channel(bot: commands.Bot, message: str):
+    channel = bot.get_channel(LOG_CHANNEL_ID)
+    if channel:
+        try:
+            await channel.send(f"🪵 {message}")
+        except Exception:
+            pass
+
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+    print(f"{bot.user} è online.")
+    await log_to_channel(bot, f"✅ Il bot è online come `{bot.user}` (ID: {bot.user.id})")
+
+@bot.event
+async def on_application_command(interaction: discord.Interaction):
+    user = interaction.user
+    await log_to_channel(bot, f"📥 Comando `{interaction.command.name}` eseguito da {user.mention} (`{user.id}`)")
+
+@bot.event
+async def on_command(ctx):
+    await log_to_channel(bot, f"📥 Comando `{ctx.command}` eseguito da {ctx.author} (`{ctx.author.id}`)")
+
+@bot.event
+async def on_error(event, *args, **kwargs):
+    error_trace = traceback.format_exc()
+    error_trace = error_trace[:1900]  
+    await log_to_channel(bot, f"❌ Errore globale in `{event}`:\n```\n{error_trace}\n```")
+
+@bot.event
+async def on_command_error(ctx, error):
+    await log_to_channel(bot, f"⚠️ Errore nel comando `{ctx.command}` da `{ctx.author}`:\n`{str(error)}`")
+
+async def log_esito(title: str, approvato: bool, moderatore: discord.User, utente: discord.User, motivazione: str):
+    emoji = "✅" if approvato else "❌"
+    stato = "approvata" if approvato else "rifiutata"
+    motivazione = motivazione[:150]
+    await log_to_channel(
+        bot,
+        f"{emoji} Richiesta **{title}** {stato} da `{moderatore}` per `{utente}`.\n📄 Motivazione: {motivazione}"
+    )
+
 
 if __name__ == "__main__":
     token = os.getenv("CRIMI_TOKEN")
