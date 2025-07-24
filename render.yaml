@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: criminalit--bot
+    name: corleone-bot
     env: python
     plan: free
     buildCommand: "pip install -r requirements.txt"
