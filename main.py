@@ -110,7 +110,7 @@ class NoteModal(discord.ui.Modal, title="Note o Motivazione"):
         await interaction.response.send_message("Richiesta gestita con successo.", ephemeral=True)
 
 @bot.tree.command(name="richiesta-arruolamento", description="Richiedi di essere Arruolato.")
-async def richiesta.arruolamento(interaction: discord.Interaction):
+async def richiesta_arruolamento(interaction: discord.Interaction):
     await interaction.response.send_modal(RichiestaArruolamentoModal())
 
 # ✅ COMANDO RICHIESTA TAGLIA
