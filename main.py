@@ -34,28 +34,26 @@ async def on_ready():
         print(f"[DEBUG] Errore sincronizzazione: {e}")
     print(f"[DEBUG] Bot connesso come {bot.user}")
 
-# ✅ COMANDO REGISTRO ORGANIZZAZIONE
+# ✅ COMANDO RICHIESTE
 
-CANALE_RICHIESTE_ID = 1368676791094612028
-THUMBNAIL_URL = "https://media.discordapp.net/attachments/1305532702560092211/1305537542388453446/ca921a39b77c3f617eae15daae4805d5.png?ex=6860a2d5&is=685f5155&hm=603aaf0917d163cd9bcf73459fc243c3c60eb2b295c224dd703d9c91f950ab44&=&format=webp&quality=lossless&width=848&height=848"
+CANALE_RICHIESTE_ID = 1397918628384342047
+THUMBNAIL_URL = "https://media.discordapp.net/attachments/1344394355229720596/1397919905449377792/Logo_Corleone_3.webp?ex=688379dd&is=6882285d&hm=4d2804e37661fddfd5ed6b023adc20b785e2d04d360d80047a4d7f0336896341&=&format=webp&width=662&height=662"
 
-class RegistroOrganizzazioneModal(discord.ui.Modal, title="Registrazione Organizzazione"):
-    nome_roblox = discord.ui.TextInput(label="Nome Roblox", required=True)
-    nome_discord = discord.ui.TextInput(label="Nome Discord", required=True)
-    nome_organizzazione = discord.ui.TextInput(label="Nome dell'organizzazione", required=True)
-    tipo_organizzazione = discord.ui.TextInput(label="Tipo di organizzazione", required=True)
-    zona_operativa = discord.ui.TextInput(label="Zona in cui vuoi operare", required=True)
+class RichiestaArruolamentoModal(discord.ui.Modal, title="Richiedi Arruolamento"):
+    nome_roblox = discord.ui.TextInput(label="Nome Roblox (Main)", required=True)
+    nome_roblox_alt = discord.ui.TextInput(label="Nome Roblox ALT (Solo per chi Gioca da Alt)", required=False)
+    attività_game = discord.ui.TextInput(label="Quanto sei attivo da 1 a 10:", required=True)
+    motivazione = discord.ui.TextInput(label="Perchè vuoi entrare in questa organizzazione:", required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
         embed = discord.Embed(
-            title="Richiesta Registrazione Organizzazione",
-            color=discord.Color.orange()
+            title="Richiesta Arruolamento",
+            color=discord.Color.red()
         )
-        embed.add_field(name="Nome Roblox", value=self.nome_roblox.value, inline=False)
-        embed.add_field(name="Nome Discord", value=self.nome_discord.value, inline=False)
-        embed.add_field(name="Nome Organizzazione", value=self.nome_organizzazione.value, inline=False)
-        embed.add_field(name="Tipo Organizzazione", value=self.tipo_organizzazione.value, inline=False)
-        embed.add_field(name="Zona nella quale si vuole operare", value=self.zona_operativa.value, inline=False)
+        embed.add_field(name="Nome Roblox (Main)", value=self.nome_roblox.value, inline=False)
+        embed.add_field(name="Nome Roblox ALT", value=self.nome_roblox_alt.value, inline=False)
+        embed.add_field(name="Quanto sei attivo da 1 a 10:", value=self.attività_game.value, inline=False)
+        embed.add_field(name="Perchè vuoi entrare in questa organizzazione:", value=self.motivazione.value, inline=False)
         embed.set_footer(text=f"ID Richiedente: {interaction.user.id}")
         embed.set_thumbnail(url=THUMBNAIL_URL)
 
@@ -94,11 +92,11 @@ class NoteModal(discord.ui.Modal, title="Note o Motivazione"):
 
     async def on_submit(self, interaction: discord.Interaction):
         if self.accettato:
-            self.embed.title = "Richiesta Organizzazione Accettata!"
+            self.embed.title = "Richiesta Arruolamento Accettata!"
             self.embed.color = discord.Color.green()
             self.embed.add_field(name="Note Aggiuntive", value=self.note.value, inline=False)
         else:
-            self.embed.title = "Richiesta Organizzazione Rifiutata"
+            self.embed.title = "Richiesta Arruolamento Rifiutata"
             self.embed.color = discord.Color.red()
             self.embed.add_field(name="Motivazione del Rifiuto", value=self.note.value, inline=False)
 
@@ -111,102 +109,15 @@ class NoteModal(discord.ui.Modal, title="Note o Motivazione"):
 
         await interaction.response.send_message("Richiesta gestita con successo.", ephemeral=True)
 
-@bot.tree.command(name="registro-organizzazione", description="Registra una nuova organizzazione criminale")
-async def registro_organizzazioni(interaction: discord.Interaction):
-    await interaction.response.send_modal(RegistroOrganizzazioneModal())
-
-# ✅ COMANDO SEGNALAZIONE FDO
-
-CANALE_SEGNALAZIONI_ID = 1368496866764783617
-RUOLO_DA_PINGARE_ID = 1368521510272372867
-
-THUMBNAIL_URL = "https://media.discordapp.net/attachments/1305532702560092211/1305537542388453446/ca921a39b77c3f617eae15daae4805d5.png?ex=6860a2d5&is=685f5155&hm=603aaf0917d163cd9bcf73459fc243c3c60eb2b295c224dd703d9c91f950ab44"
-
-class NoteModal(discord.ui.Modal, title="Motivazione / Note Aggiuntive"):
-    def __init__(self, user, embed, message, approvato: bool):
-        super().__init__()
-        self.user = user
-        self.embed = embed
-        self.message = message
-        self.approvato = approvato
-
-    note = discord.ui.TextInput(label="Motivazione / Note", style=discord.TextStyle.paragraph, required=True)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        if self.approvato:
-            self.embed.title = "Segnalazione Accettata!"
-            self.embed.color = discord.Color.green()
-            self.embed.add_field(name="Note Aggiuntive", value=self.note.value, inline=False)
-        else:
-            self.embed.title = "Segnalazione Rifiutata"
-            self.embed.color = discord.Color.red()
-            self.embed.add_field(name="Motivazione del Rifiuto", value=self.note.value, inline=False)
-
-        await self.message.edit(embed=self.embed, view=None)
-
-        try:
-            dm_embed = self.embed.copy()
-            await self.user.send("📢 Esito della tua segnalazione FDO:", embed=dm_embed)
-        except:
-            pass
-
-        await interaction.response.send_message("✅ Esito gestito con successo.", ephemeral=True)
-
-class AzioneView(discord.ui.View):
-    def __init__(self, user, embed):
-        super().__init__(timeout=None)
-        self.user = user
-        self.embed = embed
-
-    @discord.ui.button(label="Accetta", style=discord.ButtonStyle.success)
-    async def accetta(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not interaction.user.guild_permissions.administrator:
-            return await interaction.response.send_message("❌ Non hai il permesso per usare questo pulsante.", ephemeral=True)
-        await interaction.response.send_modal(NoteModal(self.user, self.embed, interaction.message, True))
-
-    @discord.ui.button(label="Rifiuta", style=discord.ButtonStyle.danger)
-    async def rifiuta(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not interaction.user.guild_permissions.administrator:
-            return await interaction.response.send_message("❌ Non hai il permesso per usare questo pulsante.", ephemeral=True)
-        await interaction.response.send_modal(NoteModal(self.user, self.embed, interaction.message, False))
-
-class SegnaleFDOModal(discord.ui.Modal, title="Segnalazione FDO"):
-    target = discord.ui.TextInput(label="Target (utente segnalato)", required=True)
-    motivazione = discord.ui.TextInput(label="Motivazione", style=discord.TextStyle.paragraph, required=True)
-    prove = discord.ui.TextInput(label="Prove (link)", required=True)
-    oggetti = discord.ui.TextInput(label="Oggetti da rimborsare (facoltativo)", required=False)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        embed = discord.Embed(
-            title="Segnalazione FDO Inviata",
-            color=discord.Color.orange()
-        )
-        embed.add_field(name="Target", value=self.target.value, inline=False)
-        embed.add_field(name="Motivazione", value=self.motivazione.value, inline=False)
-        embed.add_field(name="Prove", value=self.prove.value, inline=False)
-        embed.add_field(name="Oggetti da Rimborsare", value=self.oggetti.value or "N/A", inline=False)
-        embed.set_footer(text=f"ID Richiedente: {interaction.user.id}")
-        embed.set_thumbnail(url=THUMBNAIL_URL)
-
-        view = AzioneView(interaction.user, embed)
-        canale = interaction.guild.get_channel(CANALE_SEGNALAZIONI_ID)
-        ruolo = interaction.guild.get_role(RUOLO_DA_PINGARE_ID)
-
-        if canale:
-            await canale.send(content=ruolo.mention if ruolo else "", embed=embed, view=view)
-            await interaction.response.send_message("✅ Segnalazione FDO inviata con successo!", ephemeral=True)
-        else:
-            await interaction.response.send_message("❌ Errore: canale delle segnalazioni non trovato.", ephemeral=True)
-
-@bot.tree.command(name="segnala-fdo", description="Invia una segnalazione per FDO")
-async def segnale_fdo(interaction: discord.Interaction):
-    await interaction.response.send_modal(SegnaleFDOModal())
+@bot.tree.command(name="richiesta-arruolamento", description="Richiedi di essere Arruolato.")
+async def richiesta.arruolamento(interaction: discord.Interaction):
+    await interaction.response.send_modal(RichiestaArruolamentoModal())
 
 # ✅ COMANDO RICHIESTA TAGLIA
 
-THUMBNAIL_URL = "https://media.discordapp.net/attachments/1305532702560092211/1305537542388453446/ca921a39b77c3f617eae15daae4805d5.png?ex=6860a2d5&is=685f5155&hm=603aaf0917d163cd9bcf73459fc243c3c60eb2b295c224dd703d9c91f950ab44"
+THUMBNAIL_URL = "https://media.discordapp.net/attachments/1344394355229720596/1397919905449377792/Logo_Corleone_3.webp?ex=688379dd&is=6882285d&hm=4d2804e37661fddfd5ed6b023adc20b785e2d04d360d80047a4d7f0336896341&=&format=webp&width=662&height=662"
 
-CANALE_TAGLIA_ID = 1370048407628152892
+CANALE_TAGLIA_ID = 1397922199209246822
 
 class NoteTagliaModal(discord.ui.Modal, title="Motivazione / Note Aggiuntive"):
     def __init__(self, user, embed, message, approvato: bool):
@@ -259,7 +170,6 @@ class AzioneTagliaView(discord.ui.View):
 class RichiestaTagliaModal(discord.ui.Modal, title="Richiesta Taglia"):
     nome_roblox = discord.ui.TextInput(label="Nome Roblox", required=True)
     nome_discord = discord.ui.TextInput(label="Nome Discord", required=True)
-    organizzazione = discord.ui.TextInput(label="Organizzazione del mittente", required=True)
     motivazione = discord.ui.TextInput(label="Motivazione", style=discord.TextStyle.paragraph, required=True)
     prove = discord.ui.TextInput(label="Prove (link, testi, ecc)", style=discord.TextStyle.paragraph, required=True)
 
@@ -270,7 +180,6 @@ class RichiestaTagliaModal(discord.ui.Modal, title="Richiesta Taglia"):
         )
         embed.add_field(name="Nome Roblox", value=self.nome_roblox.value, inline=False)
         embed.add_field(name="Nome Discord", value=self.nome_discord.value, inline=False)
-        embed.add_field(name="Organizzazione del mittente", value=self.organizzazione.value, inline=False)
         embed.add_field(name="Motivazione", value=self.motivazione.value, inline=False)
         embed.add_field(name="Prove", value=self.prove.value, inline=False)
         embed.set_thumbnail(url=THUMBNAIL_URL)
@@ -291,9 +200,9 @@ async def richiesta_taglia(interaction: discord.Interaction):
 
 
 if __name__ == "__main__":
-    token = os.getenv("CRIMI_TOKEN")
+    token = os.getenv("CORLEONE_TOKEN")
     if token:
         print("[DEBUG] Avvio bot...")
         bot.run(token)
     else:
-        print("[DEBUG] Variabile CRIMI_TOKEN non trovata.")
+        print("[DEBUG] Variabile CORLEONE_TOKEN non trovata.")
